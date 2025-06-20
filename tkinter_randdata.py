@@ -14,7 +14,7 @@ class ContinuousPlotApp:
         self.root.title("Continuous Random Data Generation and Plotting")
 
         # Set the window size
-        self.root.geometry("1200x1000")  # Width x Height
+        self.root.geometry("1920x1080")  # Width x Height
 
         # Load the logo
         try:
@@ -38,8 +38,11 @@ class ContinuousPlotApp:
 
         # Initialize plots with a smaller figsize
         self.fig, self.axes = plt.subplots(nrows=2, ncols=1, figsize=(6, 8))
-        self.lines1 = [self.axes[0].plot([], [], 'r-')[0], self.axes[0].plot([], [], 'b-')[0]]  # Two lines for the first plot
-        self.line2 = self.axes[1].plot([], [], 'g-')[0]  # One line for the second plot
+        self.lines1 = [
+            self.axes[0].plot([], [], 'r-', label='Line 1')[0],
+            self.axes[0].plot([], [], 'b-', label='Line 2')[0]
+        ]
+        self.line2 = self.axes[1].plot([], [], 'g-', label='Line 3')[0]
 
         # Set initial limits and titles for each plot
         for ax, title in zip(self.axes, ['Plot 1 (Two Lines)', 'Plot 2 (One Line)']):
@@ -48,6 +51,10 @@ class ContinuousPlotApp:
             ax.set_xlabel('Time')
             ax.set_ylabel('Amplitude')
             ax.grid(True)  # Enable grid
+
+        # Add legends
+        self.axes[0].legend(loc='upper right')
+        self.axes[1].legend(loc='upper right')
 
         # Initialize data arrays for each plot
         self.data1 = [{'x': [], 'y': []}, {'x': [], 'y': []}]  # Data for two lines in the first plot
@@ -145,24 +152,23 @@ class ContinuousPlotApp:
             self.root.after(100, self.update_plots)  # Update every 100 ms
 
     def save_data(self):
-        # Combine data into a DataFrame
-        df1_1 = pd.DataFrame(self.data1[0])
-        df1_2 = pd.DataFrame(self.data1[1])
-        df2 = pd.DataFrame(self.data2)
+    # Get the longest x-axis in case of unequal lengths
+        max_len = max(len(self.data1[0]['x']), len(self.data1[1]['x']))
 
-        # Ask for file name and location
-        file_path = filedialog.asksaveasfilename(defaultextension=".xlsx",
-                                               filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")],
-                                               title="Save Data")
-        if file_path:
-            # Save to Excel
-            with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
-                df1_1.to_excel(writer, sheet_name='Plot1_Line1', index=False)
-                df1_2.to_excel(writer, sheet_name='Plot1_Line2', index=False)
-                df2.to_excel(writer, sheet_name='Plot2_Line1', index=False)
+    # Fill x-values (use the longest or pad with NaN if needed)
+        x_values = self.data1[0]['x'] if len(self.data1[0]['x']) == max_len else self.data1[1]['x']
+        x_values = x_values + [np.nan] * (max_len - len(x_values))
 
-            messagebox.showinfo("Save Data", f"Data saved successfully to {file_path}")
-            self.data_saved = True
+    # Ensure both y-value lists are the same length (pad with NaN if needed)
+        y1 = self.data1[0]['y'] + [np.nan] * (max_len - len(self.data1[0]['y']))
+        y2 = self.data1[1]['y'] + [np.nan] * (max_len - len(self.data1[1]['y']))
+
+    # Create DataFrame
+        df = pd.DataFrame({
+            'X': x_values,
+            'Line1_Y': y1,
+            'Line2_Y': y2
+            })
 
     def exit_program(self):
         if not self.data_saved:
