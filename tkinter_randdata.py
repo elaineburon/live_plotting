@@ -11,8 +11,19 @@ from PIL import Image, ImageTk
 class ContinuousPlotApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Wire Diameter Checks")
-        
+        self.root.title("Continuous Random Data Generation and Plotting")
+
+        # Set the window size
+        self.root.geometry("1200x1000")  # Width x Height
+
+        # Load the logo
+        try:
+            self.logo_image = Image.open("lbl_logo.ico")  # Replace with your logo file path
+            self.logo_photo = ImageTk.PhotoImage(self.logo_image)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load logo: {e}")
+            self.logo_photo = None
+
         # Set logo 
         try:
             self.logo_image = Image.open('lbl_logo.ico')  # File has to be in the same path 
@@ -23,12 +34,7 @@ class ContinuousPlotApp:
 
         # Display the logo
         if self.logo_photo:
-        #     self.logo_label = ttk.Label(self.root, image=self.logo_photo)
-        #     self.logo_label.pack(side=tk.TOP, pady=10)
             self.root.iconphoto(False, self.logo_photo)
-
-        # Set the window size
-        self.root.geometry("1200x1000")  # Width x Height
 
         # Initialize plots with a smaller figsize
         self.fig, self.axes = plt.subplots(nrows=2, ncols=1, figsize=(6, 8))
@@ -36,11 +42,12 @@ class ContinuousPlotApp:
         self.line2 = self.axes[1].plot([], [], 'g-')[0]  # One line for the second plot
 
         # Set initial limits and titles for each plot
-        for ax, title in zip(self.axes, ['Plot 1', 'Plot 2']):
+        for ax, title in zip(self.axes, ['Plot 1 (Two Lines)', 'Plot 2 (One Line)']):
             ax.set_xlim(0, 100)
             ax.set_title(title)
-            ax.set_xlabel('Data Point')
-            ax.set_ylabel('Diameter')
+            ax.set_xlabel('Time')
+            ax.set_ylabel('Amplitude')
+            ax.grid(True)  # Enable grid
 
         # Initialize data arrays for each plot
         self.data1 = [{'x': [], 'y': []}, {'x': [], 'y': []}]  # Data for two lines in the first plot
@@ -50,6 +57,17 @@ class ContinuousPlotApp:
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
+        # Create annotations for displaying x and y values on hover
+        self.hover_annotations = [ax.annotate("", xy=(0, 0), xytext=(20, 20),
+                                             textcoords="offset points"
+                                             )
+                                for ax in self.axes]
+        for ann in self.hover_annotations:
+            ann.set_visible(False)
+
+        # Connect mouse motion event to the callback function
+        self.canvas.mpl_connect('motion_notify_event', self.on_motion)
+
         # Create control buttons using ttk
         self.control_frame = ttk.Frame(self.root)
         self.control_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=10)
@@ -57,10 +75,10 @@ class ContinuousPlotApp:
         self.start_button = ttk.Button(self.control_frame, text="Start", command=self.start_plotting)
         self.start_button.pack(side=tk.LEFT, padx=10, pady=10)
 
-        self.stop_button = ttk.Button(self.control_frame, text="Stop", command=self.stop_plotting)
+        self.stop_button = ttk.Button(self.control_frame, text="Pause", command=self.stop_plotting)
         self.stop_button.pack(side=tk.LEFT, padx=10, pady=10)
 
-        self.save_button = ttk.Button(self.control_frame, text="Save", command=self.save_data)
+        self.save_button = ttk.Button(self.control_frame, text="Save Data", command=self.save_data)
         self.save_button.pack(side=tk.LEFT, padx=10, pady=10)
 
         self.exit_button = ttk.Button(self.control_frame, text="Exit", command=self.exit_program)
@@ -69,8 +87,7 @@ class ContinuousPlotApp:
         # Flag to control plotting
         self.is_plotting = False
         self.data_saved = False
-        
-   
+
     def start_plotting(self):
         if not self.is_plotting:
             self.is_plotting = True
@@ -85,7 +102,7 @@ class ContinuousPlotApp:
             for i in range(2):
                 # Generate new data point
                 new_x1 = len(self.data1[i]['x'])
-                new_y1 = np.random.normal(-1, 1)  # Random data point
+                new_y1 = np.random.normal(0, 0.5)  # Random data point with larger variance to allow negative values
 
                 # Append new data point to the lists
                 self.data1[i]['x'].append(new_x1)
@@ -104,7 +121,7 @@ class ContinuousPlotApp:
 
             # Update the second plot with one line of random data
             new_x2 = len(self.data2['x'])
-            new_y2 = np.random.normal(0, 0.1)  # Random data point
+            new_y2 = np.random.normal(0, 0.5)  # Random data point with larger variance to allow negative values
 
             # Append new data point to the lists
             self.data2['x'].append(new_x2)
@@ -160,6 +177,27 @@ class ContinuousPlotApp:
         if self.is_plotting:
             self.stop_plotting()
         self.root.destroy()
+
+    def on_motion(self, event):
+        for i, ax in enumerate(self.axes):
+            if event.inaxes == ax:
+                cont, ind = ax.contains(event)
+                if cont:
+                    x, y = event.xdata, event.ydata
+                    self.hover_annotations[i].xy = (x, y)
+                    self.hover_annotations[i].set_text(f"x: {x:.2f}\ny: {y:.2f}")
+                    self.hover_annotations[i].set_visible(True)
+                    # Adjust annotation position to avoid going off-screen
+                    if y < 0:
+                        self.hover_annotations[i].set_verticalalignment('top')
+                    else:
+                        self.hover_annotations[i].set_verticalalignment('bottom')
+                else:
+                    self.hover_annotations[i].set_visible(False)
+            else:
+                self.hover_annotations[i].set_visible(False)
+        self.canvas.draw()
+
 
 if __name__ == "__main__":
     root = tk.Tk()
