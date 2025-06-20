@@ -187,11 +187,6 @@ class ContinuousPlotApp:
                     self.hover_annotations[i].xy = (x, y)
                     self.hover_annotations[i].set_text(f"x: {x:.2f}\ny: {y:.2f}")
                     self.hover_annotations[i].set_visible(True)
-                    # Adjust annotation position to avoid going off-screen
-                    if y < 0:
-                        self.hover_annotations[i].set_verticalalignment('top')
-                    else:
-                        self.hover_annotations[i].set_verticalalignment('bottom')
                 else:
                     self.hover_annotations[i].set_visible(False)
             else:
