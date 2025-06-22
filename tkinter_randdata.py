@@ -1,8 +1,14 @@
+# 2025 06 22 15:00 
+
+# - Fix Excel file to have all the y-val saved into a single sheet
+# - Center the plots in their frames
+# - Icon function not working
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+import customtkinter as ctk
+from tkinter import messagebox, filedialog
 import pandas as pd
 from PIL import Image, ImageTk
 
@@ -12,7 +18,6 @@ class ContinuousPlotApp:
         self.root.title("Continuous Random Data Generation and Plotting")
         self.root.geometry("1920x1080")
 
-        # Load the logo (optional)
         try:
             self.logo_image = Image.open("lbl_logo.ico")
             self.logo_photo = ImageTk.PhotoImage(self.logo_image)
@@ -23,18 +28,23 @@ class ContinuousPlotApp:
         self.data1 = [{'x': [], 'y': []}, {'x': [], 'y': []}]
         self.data2 = {'x': [], 'y': []}
 
-        # Plot 1 Frame with scrollbar
-        self.frame1_container = ttk.Frame(self.root)
-        self.frame1_container.pack(fill=tk.BOTH, expand=True)
-        self.frame1_canvas = tk.Canvas(self.frame1_container)
-        self.frame1_scrollbar = ttk.Scrollbar(self.frame1_container, orient="horizontal")
-        self.frame1_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
-        self.frame1_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.frame1_canvas.configure(xscrollcommand=self.frame1_scrollbar.set)
+        # Container for plot 1 centered
+        self.plot1_container = ctk.CTkFrame(self.root)
+        self.plot1_container.pack(padx=10, pady=10, fill="x")
+        self.plot1_container.grid_columnconfigure(0, weight=1)
+        self.plot1_container.grid_columnconfigure(1, weight=1)
+        self.plot1_container.grid_rowconfigure(0, weight=1)
 
-        self.frame1 = ttk.Frame(self.frame1_canvas)
-        self.frame1_canvas.create_window((0, 0), window=self.frame1, anchor="nw")
-        self.frame1.bind("<Configure>", lambda e: self.frame1_canvas.configure(scrollregion=self.frame1_canvas.bbox("all")))
+        self.scrollable_frame1 = ctk.CTkScrollableFrame(self.plot1_container, orientation="horizontal", width=1050, height=400)
+        self.scrollable_frame1.grid(row=0, column=0, sticky="nsew")
+
+        self.button_frame1 = ctk.CTkFrame(self.plot1_container)
+        self.button_frame1.grid(row=0, column=1, padx=10, sticky="nsew")
+        self.jump1_button = ctk.CTkButton(self.button_frame1, text="Jump to Current", command=self.jump_to_current1)
+        self.jump1_button.pack(pady=(180, 5), anchor="center")
+        self.follow_var1 = ctk.BooleanVar(value=True)
+        self.follow_check1 = ctk.CTkCheckBox(self.button_frame1, text="Disable Auto-Follow", variable=self.follow_var1, onvalue=False, offvalue=True)
+        self.follow_check1.pack(anchor="center")
 
         self.fig1, self.ax1 = plt.subplots(figsize=(10, 4))
         self.lines1 = [
@@ -47,25 +57,29 @@ class ContinuousPlotApp:
         self.ax1.set_ylabel('Amplitude')
         self.ax1.grid(True)
         self.ax1.legend(loc='upper right')
-        self.canvas1 = FigureCanvasTkAgg(self.fig1, master=self.frame1)
+        self.canvas1 = FigureCanvasTkAgg(self.fig1, master=self.scrollable_frame1)
         self.canvas1_widget = self.canvas1.get_tk_widget()
-        self.canvas1_widget.pack(fill=tk.BOTH, expand=True)
-        self.canvas1.mpl_connect('scroll_event', lambda event: self.on_scroll(event, self.ax1, reverse=True))
+        self.canvas1_widget.pack(pady=10, anchor="center", expand=True)
+        self.canvas1.mpl_connect('scroll_event', lambda event: self.on_scroll(event, self.ax1, self.data1))
+        self.canvas1_widget.bind('<B1-Motion>', lambda event: self.drag_scroll(event, self.ax1, self.data1))
 
-        self.frame1_scrollbar.config(command=lambda *args: self.scroll_from_scrollbar(self.ax1, *args))
+        # Container for plot 2 centered
+        self.plot2_container = ctk.CTkFrame(self.root)
+        self.plot2_container.pack(padx=10, pady=10, fill="x")
+        self.plot2_container.grid_columnconfigure(0, weight=1)
+        self.plot2_container.grid_columnconfigure(1, weight=1)
+        self.plot2_container.grid_rowconfigure(0, weight=1)
 
-        # Plot 2 Frame with scrollbar
-        self.frame2_container = ttk.Frame(self.root)
-        self.frame2_container.pack(fill=tk.BOTH, expand=True)
-        self.frame2_canvas = tk.Canvas(self.frame2_container)
-        self.frame2_scrollbar = ttk.Scrollbar(self.frame2_container, orient="horizontal")
-        self.frame2_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
-        self.frame2_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.frame2_canvas.configure(xscrollcommand=self.frame2_scrollbar.set)
+        self.scrollable_frame2 = ctk.CTkScrollableFrame(self.plot2_container, orientation="horizontal", width=1050, height=400)
+        self.scrollable_frame2.grid(row=0, column=0, sticky="nsew")
 
-        self.frame2 = ttk.Frame(self.frame2_canvas)
-        self.frame2_canvas.create_window((0, 0), window=self.frame2, anchor="nw")
-        self.frame2.bind("<Configure>", lambda e: self.frame2_canvas.configure(scrollregion=self.frame2_canvas.bbox("all")))
+        self.button_frame2 = ctk.CTkFrame(self.plot2_container)
+        self.button_frame2.grid(row=0, column=1, padx=10, sticky="nsew")
+        self.jump2_button = ctk.CTkButton(self.button_frame2, text="Jump to Current", command=self.jump_to_current2)
+        self.jump2_button.pack(pady=(180, 5), anchor="center")
+        self.follow_var2 = ctk.BooleanVar(value=True)
+        self.follow_check2 = ctk.CTkCheckBox(self.button_frame2, text="Disable Auto-Follow", variable=self.follow_var2, onvalue=False, offvalue=True)
+        self.follow_check2.pack(anchor="center")
 
         self.fig2, self.ax2 = plt.subplots(figsize=(10, 4))
         self.line2 = self.ax2.plot([], [], 'g-', label='Line 3')[0]
@@ -75,14 +89,12 @@ class ContinuousPlotApp:
         self.ax2.set_ylabel('Amplitude')
         self.ax2.grid(True)
         self.ax2.legend(loc='upper right')
-        self.canvas2 = FigureCanvasTkAgg(self.fig2, master=self.frame2)
+        self.canvas2 = FigureCanvasTkAgg(self.fig2, master=self.scrollable_frame2)
         self.canvas2_widget = self.canvas2.get_tk_widget()
-        self.canvas2_widget.pack(fill=tk.BOTH, expand=True)
-        self.canvas2.mpl_connect('scroll_event', lambda event: self.on_scroll(event, self.ax2, reverse=True))
+        self.canvas2_widget.pack(pady=10, anchor="center", expand=True)
+        self.canvas2.mpl_connect('scroll_event', lambda event: self.on_scroll(event, self.ax2, [self.data2]))
+        self.canvas2_widget.bind('<B1-Motion>', lambda event: self.drag_scroll(event, self.ax2, [self.data2]))
 
-        self.frame2_scrollbar.config(command=lambda *args: self.scroll_from_scrollbar(self.ax2, *args))
-
-        # Hover annotations
         self.hover_annotations = [
             self.ax1.annotate("", xy=(0, 0), xytext=(20, 20), textcoords="offset points"),
             self.ax2.annotate("", xy=(0, 0), xytext=(20, 20), textcoords="offset points")
@@ -92,48 +104,94 @@ class ContinuousPlotApp:
         self.canvas1.mpl_connect('motion_notify_event', lambda event: self.on_motion(event, self.ax1, 0))
         self.canvas2.mpl_connect('motion_notify_event', lambda event: self.on_motion(event, self.ax2, 1))
 
-        # Control buttons
-        self.control_frame = ttk.Frame(self.root)
-        self.control_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=10)
+        self.control_frame = ctk.CTkFrame(self.root)
+        self.control_frame.pack(side=ctk.BOTTOM, fill=ctk.X, padx=10, pady=10)
 
-        self.start_button = ttk.Button(self.control_frame, text="Start", command=self.start_plotting)
-        self.start_button.pack(side=tk.LEFT, padx=10)
+        self.start_button = ctk.CTkButton(self.control_frame, text="Start", command=self.start_plotting)
+        self.start_button.pack(side=ctk.LEFT, padx=10)
 
-        self.stop_button = ttk.Button(self.control_frame, text="Pause", command=self.stop_plotting)
-        self.stop_button.pack(side=tk.LEFT, padx=10)
+        self.stop_button = ctk.CTkButton(self.control_frame, text="Pause", command=self.stop_plotting)
+        self.stop_button.pack(side=ctk.LEFT, padx=10)
 
-        self.save_button = ttk.Button(self.control_frame, text="Save Data", command=self.save_data)
-        self.save_button.pack(side=tk.LEFT, padx=10)
+        self.save_button = ctk.CTkButton(self.control_frame, text="Save Data", command=self.save_data)
+        self.save_button.pack(side=ctk.LEFT, padx=10)
 
-        self.exit_button = ttk.Button(self.control_frame, text="Exit", command=self.exit_program)
-        self.exit_button.pack(side=tk.RIGHT, padx=10)
+        self.exit_button = ctk.CTkButton(self.control_frame, text="Exit", command=self.exit_program)
+        self.exit_button.pack(side=ctk.RIGHT, padx=10)
 
         self.is_plotting = False
         self.data_saved = False
 
+    def on_scroll(self, event, ax, data):
+        if ax == self.ax1:
+            self.follow_var1.set(False)
+        elif ax == self.ax2:
+            self.follow_var2.set(False)
+        x_min, x_max = ax.get_xlim()
+        step = (x_max - x_min) * 0.1
+        direction = -1 if event.button == 'up' else 1
+        max_x = max([max(d['x']) if d['x'] else 0 for d in data])
+        new_min = min(max(0, x_min + direction * step), max_x - (x_max - x_min))
+        new_max = new_min + (x_max - x_min)
+        ax.set_xlim(new_min, new_max)
+        ax.figure.canvas.draw_idle()
+
+    def drag_scroll(self, event, ax, data):
+        if ax == self.ax1:
+            self.follow_var1.set(False)
+        elif ax == self.ax2:
+            self.follow_var2.set(False)
+        if event.x != 0:
+            x_min, x_max = ax.get_xlim()
+            dx = -(event.x - getattr(self, 'last_drag_x', event.x)) * 0.1
+            new_min = max(0, x_min + dx)
+            max_x = max([max(d['x']) if d['x'] else 0 for d in data])
+            plot_width = x_max - x_min
+            new_min = min(new_min, max_x - plot_width)
+            ax.set_xlim(new_min, new_min + plot_width)
+            ax.figure.canvas.draw_idle()
+            self.last_drag_x = event.x
+
+    def on_motion(self, event, ax, index):
+        if event.inaxes == ax and event.xdata and event.ydata:
+            self.hover_annotations[index].xy = (event.xdata, event.ydata)
+            self.hover_annotations[index].set_text(f"x: {event.xdata:.2f}\ny: {event.ydata:.2f}")
+            self.hover_annotations[index].set_visible(True)
+        else:
+            self.hover_annotations[index].set_visible(False)
+        ax.figure.canvas.draw_idle()
+
     def start_plotting(self):
         if not self.is_plotting:
             self.is_plotting = True
+            self.follow_var1.set(True)
+            self.follow_var2.set(True)
             self.update_plots()
 
     def stop_plotting(self):
         self.is_plotting = False
 
+    def jump_to_current1(self):
+        self.follow_var1.set(True)
+
+    def jump_to_current2(self):
+        self.follow_var2.set(True)
+
     def update_plots(self):
         if self.is_plotting:
             for i in range(2):
-                new_x = len(self.data1[i]['x'])
-                new_y = np.random.normal(0, 0.5)
-                self.data1[i]['x'].append(new_x)
-                self.data1[i]['y'].append(new_y)
+                new_x1 = len(self.data1[i]['x'])
+                new_y1 = np.random.normal(0, 0.5)
+                self.data1[i]['x'].append(new_x1)
+                self.data1[i]['y'].append(new_y1)
                 self.lines1[i].set_data(self.data1[i]['x'], self.data1[i]['y'])
 
-            new_x1 = len(self.data1[0]['x']) - 1
-            if new_x1 > 99:
-                self.ax1.set_xlim(new_x1 - 99, new_x1)
-
             self.ax1.relim()
-            self.ax1.autoscale_view(scalex=False, scaley=True)
+            self.ax1.autoscale_view()
+            if self.follow_var1.get():
+                x_max = len(self.data1[0]['x'])
+                self.ax1.set_xlim(max(0, x_max - 100), x_max)
+            self.canvas1.draw()
 
             new_x2 = len(self.data2['x'])
             new_y2 = np.random.normal(0, 0.5)
@@ -141,110 +199,44 @@ class ContinuousPlotApp:
             self.data2['y'].append(new_y2)
             self.line2.set_data(self.data2['x'], self.data2['y'])
 
-            if new_x2 > 99:
-                self.ax2.set_xlim(new_x2 - 99, new_x2)
-
             self.ax2.relim()
-            self.ax2.autoscale_view(scalex=False, scaley=True)
-
-            max_scroll1 = max(self.data1[0]['x'] + self.data1[1]['x'], default=100)
-            max_scroll2 = max(self.data2['x'], default=100)
-
-            self.frame1_scrollbar.set(0.0, 100 / max(max_scroll1, 100))
-            self.frame2_scrollbar.set(0.0, 100 / max(max_scroll2, 100))
-
-            self.canvas1.draw()
+            self.ax2.autoscale_view()
+            if self.follow_var2.get():
+                x_max = len(self.data2['x'])
+                self.ax2.set_xlim(max(0, x_max - 100), x_max)
             self.canvas2.draw()
+
             self.root.after(100, self.update_plots)
 
-    def scroll_from_scrollbar(self, ax, *args):
-        try:
-            view_start = float(args[0])
-        except:
-            return
-        data_x = self.data1[0]['x'] + self.data1[1]['x'] if ax == self.ax1 else self.data2['x']
-        max_x = max(data_x, default=100)
-        plot_width = 100
-        new_min = view_start * max_x
-        new_max = new_min + plot_width
-        if new_max > max_x:
-            new_max = max_x
-            new_min = max(0, new_max - plot_width)
-        ax.set_xlim(new_min, new_max)
-        ax.figure.canvas.draw_idle()
-
-    def on_scroll(self, event, ax, reverse=False):
-        x_min, x_max = ax.get_xlim()
-        range_x = x_max - x_min
-        step = range_x * 0.1
-        max_x = 0
-        if ax == self.ax1:
-            max_x = max(self.data1[0]['x'] + self.data1[1]['x'], default=100)
-        elif ax == self.ax2:
-            max_x = max(self.data2['x'], default=100)
-
-        if (event.button == 'up' and not reverse) or (event.button == 'down' and reverse):
-            new_x_max = min(max_x, x_max + step)
-            new_x_min = max(0, new_x_max - range_x)
-        elif (event.button == 'down' and not reverse) or (event.button == 'up' and reverse):
-            new_x_min = max(0, x_min - step)
-            new_x_max = new_x_min + range_x
-
-        ax.set_xlim(new_x_min, new_x_max)
-        ax.figure.canvas.draw_idle()
-
     def save_data(self):
-        max_len = max(len(self.data1[0]['x']), len(self.data1[1]['x']))
-        x_values = self.data1[0]['x'] + [np.nan] * (max_len - len(self.data1[0]['x']))
-        y1 = self.data1[0]['y'] + [np.nan] * (max_len - len(self.data1[0]['y']))
-        y2 = self.data1[1]['y'] + [np.nan] * (max_len - len(self.data1[1]['y']))
-
-        df = pd.DataFrame({
-            'X': x_values,
-            'Line1_Y': y1,
-            'Line2_Y': y2
-        })
+        df1_1 = pd.DataFrame(self.data1[0])
+        df1_2 = pd.DataFrame(self.data1[1])
+        df2 = pd.DataFrame(self.data2)
 
         file_path = filedialog.asksaveasfilename(defaultextension=".xlsx",
-                                                 filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")],
-                                                 title="Save Data")
+                                                 filetypes=[("Excel files", "*.xlsx")])
         if file_path:
             with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
-                df.to_excel(writer, sheet_name='Plot1_XY_Values', index=False)
-            messagebox.showinfo("Save Data", f"X and Y values from Plot 1 saved successfully to {file_path}")
+                df1_1.to_excel(writer, sheet_name='Plot1_Line1', index=False)
+                df1_2.to_excel(writer, sheet_name='Plot1_Line2', index=False)
+                df2.to_excel(writer, sheet_name='Plot2_Line1', index=False)
+            messagebox.showinfo("Save Data", f"Data saved to {file_path}")
             self.data_saved = True
 
     def exit_program(self):
         if not self.data_saved:
-            confirm = messagebox.askyesnocancel("Confirm Exit", "You have unsaved data. Do you want to save it before exiting?")
+            confirm = messagebox.askyesnocancel("Exit", "Save data before exiting?")
             if confirm is None:
                 return
             elif confirm:
                 self.save_data()
                 if not self.data_saved:
                     return
-        if self.is_plotting:
-            self.stop_plotting()
         self.root.destroy()
 
-    def on_motion(self, event, ax, index):
-        if event.inaxes == ax:
-            cont, _ = ax.contains(event)
-            if cont:
-                x, y = event.xdata, event.ydata
-                self.hover_annotations[index].xy = (x, y)
-                self.hover_annotations[index].set_text(f"x: {x:.2f}\ny: {y:.2f}")
-                self.hover_annotations[index].set_visible(True)
-            else:
-                self.hover_annotations[index].set_visible(False)
-        else:
-            self.hover_annotations[index].set_visible(False)
-        if index == 0:
-            self.canvas1.draw()
-        else:
-            self.canvas2.draw()
-
 if __name__ == "__main__":
-    root = tk.Tk()
+    ctk.set_appearance_mode("System")
+    ctk.set_default_color_theme("blue")
+    root = ctk.CTk()
     app = ContinuousPlotApp(root)
     root.mainloop()
