@@ -1,4 +1,4 @@
-# 2025 06 22 15:00 
+# 2025 06 22 21:21 
 
 # - Fix Excel file to have all the y-val saved into a single sheet
 # - Center the plots in their frames
@@ -11,11 +11,13 @@ import customtkinter as ctk
 from tkinter import messagebox, filedialog
 import pandas as pd
 from PIL import Image, ImageTk
+import os
 
 class ContinuousPlotApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Continuous Random Data Generation and Plotting")
+
+        self.root.title("Continuous Plot")
         self.root.geometry("1920x1080")
 
         try:
@@ -25,6 +27,7 @@ class ContinuousPlotApp:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load logo: {e}")
 
+        self.file_path = None
         self.data1 = [{'x': [], 'y': []}, {'x': [], 'y': []}]
         self.data2 = {'x': [], 'y': []}
 
@@ -59,7 +62,7 @@ class ContinuousPlotApp:
         self.ax1.legend(loc='upper right')
         self.canvas1 = FigureCanvasTkAgg(self.fig1, master=self.scrollable_frame1)
         self.canvas1_widget = self.canvas1.get_tk_widget()
-        self.canvas1_widget.pack(pady=10, anchor="center", expand=True)
+        self.canvas1_widget.pack(pady=10)
         self.canvas1.mpl_connect('scroll_event', lambda event: self.on_scroll(event, self.ax1, self.data1))
         self.canvas1_widget.bind('<B1-Motion>', lambda event: self.drag_scroll(event, self.ax1, self.data1))
 
@@ -91,7 +94,7 @@ class ContinuousPlotApp:
         self.ax2.legend(loc='upper right')
         self.canvas2 = FigureCanvasTkAgg(self.fig2, master=self.scrollable_frame2)
         self.canvas2_widget = self.canvas2.get_tk_widget()
-        self.canvas2_widget.pack(pady=10, anchor="center", expand=True)
+        self.canvas2_widget.pack(pady=10)
         self.canvas2.mpl_connect('scroll_event', lambda event: self.on_scroll(event, self.ax2, [self.data2]))
         self.canvas2_widget.bind('<B1-Motion>', lambda event: self.drag_scroll(event, self.ax2, [self.data2]))
 
@@ -162,6 +165,19 @@ class ContinuousPlotApp:
         ax.figure.canvas.draw_idle()
 
     def start_plotting(self):
+        if not self.file_path:
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".xlsx",
+                filetypes=[("Excel files", "*.xlsx")],
+                title="Choose file to save data"
+            )
+            if not file_path:
+                messagebox.showwarning("No File", "No file selected. Aborting start.")
+                return
+            self.file_path = file_path
+            filename = os.path.basename(file_path)
+            self.root.title(f"Continuous Plot - {filename}")
+
         if not self.is_plotting:
             self.is_plotting = True
             self.follow_var1.set(True)
@@ -213,8 +229,7 @@ class ContinuousPlotApp:
         df1_2 = pd.DataFrame(self.data1[1])
         df2 = pd.DataFrame(self.data2)
 
-        file_path = filedialog.asksaveasfilename(defaultextension=".xlsx",
-                                                 filetypes=[("Excel files", "*.xlsx")])
+        file_path = self.file_path
         if file_path:
             with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
                 df1_1.to_excel(writer, sheet_name='Plot1_Line1', index=False)
