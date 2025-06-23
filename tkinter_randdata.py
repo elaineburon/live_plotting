@@ -18,12 +18,14 @@ class ContinuousPlotApp:
         self.root = root
 
         self.root.title("Continuous Plot")
-        self.root.geometry("1920x1080")
+        self.root.geometry("1920x1080") #1920x1080
+        self.root.resizable(width=True, height=True)
 
         try:
-            self.logo_image = Image.open("lbl_logo.ico")
-            self.logo_photo = ImageTk.PhotoImage(self.logo_image)
-            self.root.iconphoto(False, self.logo_photo)
+            self.root.iconbitmap("lbl_logo.ico")
+            # self.logo_image = Image.open("lbl_logo.ico")              # Lines 26-28 is the old way to add an icon
+            # self.logo_photo = ImageTk.PhotoImage(self.logo_image)
+            # self.root.iconphoto(False, self.logo_photo)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load logo: {e}")
 
@@ -38,7 +40,7 @@ class ContinuousPlotApp:
         self.plot1_container.grid_columnconfigure(1, weight=1)
         self.plot1_container.grid_rowconfigure(0, weight=1)
 
-        self.scrollable_frame1 = ctk.CTkScrollableFrame(self.plot1_container, orientation="horizontal", width=1050, height=400)
+        self.scrollable_frame1 = ctk.CTkScrollableFrame(self.plot1_container, orientation="horizontal", width=1050, height=430)
         self.scrollable_frame1.grid(row=0, column=0, sticky="nsew")
 
         self.button_frame1 = ctk.CTkFrame(self.plot1_container)
@@ -73,7 +75,7 @@ class ContinuousPlotApp:
         self.plot2_container.grid_columnconfigure(1, weight=1)
         self.plot2_container.grid_rowconfigure(0, weight=1)
 
-        self.scrollable_frame2 = ctk.CTkScrollableFrame(self.plot2_container, orientation="horizontal", width=1050, height=400)
+        self.scrollable_frame2 = ctk.CTkScrollableFrame(self.plot2_container, orientation="horizontal", width=1050, height=430)
         self.scrollable_frame2.grid(row=0, column=0, sticky="nsew")
 
         self.button_frame2 = ctk.CTkFrame(self.plot2_container)
@@ -250,8 +252,8 @@ class ContinuousPlotApp:
         self.root.destroy()
 
 if __name__ == "__main__":
-    ctk.set_appearance_mode("System")
-    ctk.set_default_color_theme("blue")
+    ctk.set_appearance_mode("dark")
+    ctk.set_default_color_theme("dark-blue")
     root = ctk.CTk()
     app = ContinuousPlotApp(root)
     root.mainloop()
