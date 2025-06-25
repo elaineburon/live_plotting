@@ -33,20 +33,27 @@ class ContinuousPlotApp:
         self.follow_var1 = ctk.BooleanVar(value=True)
         self.follow_var2 = ctk.BooleanVar(value=True)
 
-        # Container for top plots and controls
+        # Container for plots and controls
         self.main_frame = ctk.CTkFrame(self.root)
         self.main_frame.pack(fill="both", expand=True)
-        self.main_frame.grid_columnconfigure(0, weight=5)
-        self.main_frame.grid_columnconfigure(1, weight=1)
+        self.main_frame.grid_columnconfigure(0, weight=1)
+        self.main_frame.grid_columnconfigure(1, weight=0)
+        self.main_frame.grid_columnconfigure(2, weight=0)
         self.main_frame.grid_rowconfigure(0, weight=1)
 
-        # Plots container (left)
+        # Left side - Plots
         self.plots_frame = ctk.CTkFrame(self.main_frame)
         self.plots_frame.grid(row=0, column=0, sticky="nsew")
 
         # Plot 1
         self.plot1_container = ctk.CTkFrame(self.plots_frame)
         self.plot1_container.pack(padx=10, pady=10, fill="x")
+        self.plot1_container.grid_columnconfigure(0, weight=1)
+        self.plot1_container.grid_columnconfigure(1, weight=0)
+
+        self.canvas1_container = ctk.CTkFrame(self.plot1_container)
+        self.canvas1_container.grid(row=0, column=0, sticky="nsew")
+
         self.fig1, self.ax1 = plt.subplots(figsize=(10, 4))
         self.lines1 = [
             self.ax1.plot([], [], 'r-', label='Line 1')[0],
@@ -58,15 +65,31 @@ class ContinuousPlotApp:
         self.ax1.set_ylabel('Amplitude')
         self.ax1.grid(True)
         self.ax1.legend(loc='upper right')
-        self.canvas1 = FigureCanvasTkAgg(self.fig1, master=self.plot1_container)
+        self.canvas1 = FigureCanvasTkAgg(self.fig1, master=self.canvas1_container)
         self.canvas1_widget = self.canvas1.get_tk_widget()
         self.canvas1_widget.pack(pady=10)
         self.canvas1.mpl_connect('scroll_event', lambda event: self.on_scroll(event, self.ax1, self.data1))
         self.canvas1_widget.bind('<B1-Motion>', lambda event: self.drag_scroll(event, self.ax1, self.data1))
 
+        # Controls for Plot 1 (aligned vertically center right)
+        self.plot1_controls = ctk.CTkFrame(self.plot1_container)
+        self.plot1_controls.grid(row=0, column=1, sticky="ns", padx=10)
+        self.plot1_controls.grid_rowconfigure(0, weight=1)
+        self.plot1_controls.grid_rowconfigure(1, weight=1)
+        self.jump1_button = ctk.CTkButton(self.plot1_controls, text="Jump to Current 1", command=self.jump_to_current1)
+        self.jump1_button.grid(row=0, column=0, pady=(150, 5))
+        self.follow_check1 = ctk.CTkCheckBox(self.plot1_controls, text="Disable Auto-Follow 1", variable=self.follow_var1, onvalue=False, offvalue=True)
+        self.follow_check1.grid(row=1, column=0, pady=5)
+
         # Plot 2
         self.plot2_container = ctk.CTkFrame(self.plots_frame)
         self.plot2_container.pack(padx=10, pady=10, fill="x")
+        self.plot2_container.grid_columnconfigure(0, weight=1)
+        self.plot2_container.grid_columnconfigure(1, weight=0)
+
+        self.canvas2_container = ctk.CTkFrame(self.plot2_container)
+        self.canvas2_container.grid(row=0, column=0, sticky="nsew")
+
         self.fig2, self.ax2 = plt.subplots(figsize=(10, 4))
         self.line2 = self.ax2.plot([], [], 'g-', label='Line 3')[0]
         self.ax2.set_xlim(0, 100)
@@ -75,37 +98,33 @@ class ContinuousPlotApp:
         self.ax2.set_ylabel('Amplitude')
         self.ax2.grid(True)
         self.ax2.legend(loc='upper right')
-        self.canvas2 = FigureCanvasTkAgg(self.fig2, master=self.plot2_container)
+        self.canvas2 = FigureCanvasTkAgg(self.fig2, master=self.canvas2_container)
         self.canvas2_widget = self.canvas2.get_tk_widget()
         self.canvas2_widget.pack(pady=10)
         self.canvas2.mpl_connect('scroll_event', lambda event: self.on_scroll(event, self.ax2, [self.data2]))
         self.canvas2_widget.bind('<B1-Motion>', lambda event: self.drag_scroll(event, self.ax2, [self.data2]))
 
-        # Controls (right)
+        # Controls for Plot 2 (aligned vertically center right)
+        self.plot2_controls = ctk.CTkFrame(self.plot2_container)
+        self.plot2_controls.grid(row=0, column=1, sticky="ns", padx=10)
+        self.plot2_controls.grid_rowconfigure(0, weight=1)
+        self.plot2_controls.grid_rowconfigure(1, weight=1)
+        self.jump2_button = ctk.CTkButton(self.plot2_controls, text="Jump to Current 2", command=self.jump_to_current2)
+        self.jump2_button.grid(row=0, column=0, pady=(150, 5))
+        self.follow_check2 = ctk.CTkCheckBox(self.plot2_controls, text="Disable Auto-Follow 2", variable=self.follow_var2, onvalue=False, offvalue=True)
+        self.follow_check2.grid(row=1, column=0, pady=5)
+
+        # Main control buttons on the far right
         self.control_frame = ctk.CTkFrame(self.main_frame)
-        self.control_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
-
-        self.button_group = ctk.CTkFrame(self.control_frame)
-        self.button_group.pack(side="bottom", pady=10)
-
-        self.start_button = ctk.CTkButton(self.button_group, text="Start", command=self.start_plotting)
-        self.start_button.pack(pady=5)
-        self.stop_button = ctk.CTkButton(self.button_group, text="Pause", command=self.stop_plotting)
-        self.stop_button.pack(pady=5)
-        self.save_button = ctk.CTkButton(self.button_group, text="Save Data", command=self.save_data)
-        self.save_button.pack(pady=5)
-        self.exit_button = ctk.CTkButton(self.button_group, text="Exit", command=self.exit_program)
-        self.exit_button.pack(pady=5)
-
-        self.jump1_button = ctk.CTkButton(self.control_frame, text="Jump to Current 1", command=self.jump_to_current1)
-        self.jump1_button.pack(pady=(10, 5))
-        self.jump2_button = ctk.CTkButton(self.control_frame, text="Jump to Current 2", command=self.jump_to_current2)
-        self.jump2_button.pack(pady=(10, 20))
-
-        self.follow_check1 = ctk.CTkCheckBox(self.control_frame, text="Disable Auto-Follow 1", variable=self.follow_var1, onvalue=False, offvalue=True)
-        self.follow_check1.pack(pady=(10, 10))
-        self.follow_check2 = ctk.CTkCheckBox(self.control_frame, text="Disable Auto-Follow 2", variable=self.follow_var2, onvalue=False, offvalue=True)
-        self.follow_check2.pack(pady=(0, 10))
+        self.control_frame.grid(row=0, column=2, sticky="ns", padx=10, pady=10)
+        self.start_button = ctk.CTkButton(self.control_frame, text="Start", command=self.start_plotting)
+        self.start_button.pack(pady=5, fill="x")
+        self.stop_button = ctk.CTkButton(self.control_frame, text="Pause", command=self.stop_plotting)
+        self.stop_button.pack(pady=5, fill="x")
+        self.save_button = ctk.CTkButton(self.control_frame, text="Save Data", command=self.save_data)
+        self.save_button.pack(pady=5, fill="x")
+        self.exit_button = ctk.CTkButton(self.control_frame, text="Exit", command=self.exit_program)
+        self.exit_button.pack(pady=5, fill="x")
 
         self.hover_annotations = [
             self.ax1.annotate("", xy=(0, 0), xytext=(20, 20), textcoords="offset points"),
