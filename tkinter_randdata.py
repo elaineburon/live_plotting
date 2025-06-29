@@ -1,8 +1,16 @@
-# 2025 06 22 21:21 
+# Author: Elaine Buron, elainej.buron@gmail.com
+# Version #: Rev. 1.1    
+# Last edited: 2025 06 29 14:10
 
-# - Fix Excel file to have all the y-val saved into a single sheet
-# - Center the plots in their frames
-# - Icon function not working
+# v1.0: Built a GUI using tkinter surrouding the live plotting feature  
+# v1.1: Added features before packaing into a .exe file 
+
+# Key Features:
+# - Plotting auto-generated data with pause and continue functionalities
+# - Scroll back on previous data using mouse scroll or dragging. This disables auto-follow
+# until the "Jump to Current" button is clicked
+# - Hovering the cursor over the plots will show the x, y values
+# - Saves the data as an Excel file
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -22,9 +30,11 @@ class ContinuousPlotApp:
         self.root.resizable(width=True, height=True)
 
         try:
-            self.root.iconbitmap("lbl_logo.ico")
+            self.root.iconbitmap("dave.ico")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load logo: {e}")
+
+        self.root.protocol("WM_DELETE_WINDOW", self.exit_program)
 
         self.file_path = None
         self.data1 = [{'x': [], 'y': []}, {'x': [], 'y': []}]
@@ -41,8 +51,8 @@ class ContinuousPlotApp:
         self.main_frame.grid_columnconfigure(2, weight=0)
         self.main_frame.grid_rowconfigure(0, weight=1)
 
-        # Left side - Plots
-        self.plots_frame = ctk.CTkFrame(self.main_frame, width=150, border_width=1, border_color="red")
+        # Plot frames
+        self.plots_frame = ctk.CTkFrame(self.main_frame)
         self.plots_frame.grid(row=0, column=0, sticky="nsew")
 
         # Plot 1
@@ -71,15 +81,15 @@ class ContinuousPlotApp:
         self.canvas1.mpl_connect('scroll_event', lambda event: self.on_scroll(event, self.ax1, self.data1))
         self.canvas1_widget.bind('<B1-Motion>', lambda event: self.drag_scroll(event, self.ax1, self.data1))
 
-        # Controls for Plot 1 (aligned vertically center right)
+        # Controls for Plot 1 
         self.plot1_controls = ctk.CTkFrame(self.plot1_container)
-        self.plot1_controls.grid(row=0, column=1, sticky="ns", padx=200, pady=200)
+        self.plot1_controls.grid(row=0, column=1, sticky="w", padx=100, pady=50)
         self.plot1_controls.grid_rowconfigure(0, weight=1)
         self.plot1_controls.grid_rowconfigure(1, weight=1)
-        self.jump1_button = ctk.CTkButton(self.plot1_controls, text="Jump to Current 1", command=self.jump_to_current1)
-        self.jump1_button.grid(row=0, column=0, pady=(115, 5))
-        self.follow_check1 = ctk.CTkCheckBox(self.plot1_controls, text="Disable Auto-Follow 1", variable=self.follow_var1, onvalue=False, offvalue=True)
-        self.follow_check1.grid(row=0, column=0, pady=(185, 5))
+        self.jump1_button = ctk.CTkButton(self.plot1_controls, text="Jump to Current", command=self.jump_to_current1)
+        self.jump1_button.grid(row=0, column=0, pady=10)
+        self.follow_check1 = ctk.CTkCheckBox(self.plot1_controls, text="Disable Auto-Follow", variable=self.follow_var1, onvalue=False, offvalue=True)
+        self.follow_check1.grid(row=1, column=0, pady=10) 
 
         # Plot 2
         self.plot2_container = ctk.CTkFrame(self.plots_frame)
@@ -104,27 +114,27 @@ class ContinuousPlotApp:
         self.canvas2.mpl_connect('scroll_event', lambda event: self.on_scroll(event, self.ax2, [self.data2]))
         self.canvas2_widget.bind('<B1-Motion>', lambda event: self.drag_scroll(event, self.ax2, [self.data2]))
 
-        # Controls for Plot 2 (aligned vertically center right)
-        self.plot2_controls = ctk.CTkFrame(self.plot2_container, width=150, border_width=1, border_color="red")
-        self.plot2_controls.grid(row=1, column=1, sticky="ns", padx=200)
+        # Controls for Plot 2 
+        self.plot2_controls = ctk.CTkFrame(self.plot2_container)
+        self.plot2_controls.grid(row=1, column=1, sticky="w", padx=100, pady=50)
         self.plot2_controls.grid_rowconfigure(0, weight=1)
         self.plot2_controls.grid_rowconfigure(1, weight=1)
-        self.jump2_button = ctk.CTkButton(self.plot2_controls, text="Jump to Current 2", command=self.jump_to_current2)
-        self.jump2_button.grid(row=0, column=0, pady=(115, 5))
-        self.follow_check2 = ctk.CTkCheckBox(self.plot2_controls, text="Disable Auto-Follow 2", variable=self.follow_var2, onvalue=False, offvalue=True)
-        self.follow_check2.grid(row=0, column=0, pady=(185, 5))
+        self.jump2_button = ctk.CTkButton(self.plot2_controls, text="Jump to Current", command=self.jump_to_current2)
+        self.jump2_button.grid(row=0, column=0, pady=10)
+        self.follow_check2 = ctk.CTkCheckBox(self.plot2_controls, text="Disable Auto-Follow", variable=self.follow_var2, onvalue=False, offvalue=True)
+        self.follow_check2.grid(row=1, column=0, pady=10)
 
-        # Main control buttons on the far right
+        # Main control buttons
         self.control_frame = ctk.CTkFrame(self.main_frame)
         self.control_frame.grid(row=0, column=2, sticky="ns", padx=10, pady=10)
         self.start_button = ctk.CTkButton(self.control_frame, text="Start", command=self.start_plotting)
         self.start_button.pack(pady=5, fill="x")
         self.stop_button = ctk.CTkButton(self.control_frame, text="Pause", command=self.stop_plotting)
         self.stop_button.pack(pady=5, fill="x")
-        self.save_button = ctk.CTkButton(self.control_frame, text="Save Data", command=self.save_data)
+        self.save_button = ctk.CTkButton(self.control_frame, text="Save", command=self.save_data)
         self.save_button.pack(pady=5, fill="x")
         self.exit_button = ctk.CTkButton(self.control_frame, text="Exit", command=self.exit_program)
-        self.exit_button.pack(pady=5, fill="x")
+        self.exit_button.pack(pady=5, side="bottom", fill="x")
 
         self.hover_annotations = [
             self.ax1.annotate("", xy=(0, 0), xytext=(20, 20), textcoords="offset points"),
@@ -138,6 +148,7 @@ class ContinuousPlotApp:
         self.is_plotting = False
         self.data_saved = False
 
+    # Scroll wheel to horizontally scroll through the plots 
     def on_scroll(self, event, ax, data):
         if ax == self.ax1:
             self.follow_var1.set(False)
@@ -152,6 +163,7 @@ class ContinuousPlotApp:
         ax.set_xlim(new_min, new_max)
         ax.figure.canvas.draw_idle()
 
+    # Left mouse click and drag to pan horizontally on the plot 
     def drag_scroll(self, event, ax, data):
         if ax == self.ax1:
             self.follow_var1.set(False)
@@ -168,6 +180,7 @@ class ContinuousPlotApp:
             ax.figure.canvas.draw_idle()
             self.last_drag_x = event.x
 
+    # Hover over the plot and provide x, y values
     def on_motion(self, event, ax, index):
         if event.inaxes == ax and event.xdata and event.ydata:
             self.hover_annotations[index].xy = (event.xdata, event.ydata)
@@ -177,6 +190,7 @@ class ContinuousPlotApp:
             self.hover_annotations[index].set_visible(False)
         ax.figure.canvas.draw_idle()
 
+    # Start button. Ask to create a file first
     def start_plotting(self):
         if not self.file_path:
             file_path = filedialog.asksaveasfilename(
@@ -197,15 +211,11 @@ class ContinuousPlotApp:
             self.follow_var2.set(True)
             self.update_plots()
 
+    # Pause button
     def stop_plotting(self):
         self.is_plotting = False
 
-    def jump_to_current1(self):
-        self.follow_var1.set(True)
-
-    def jump_to_current2(self):
-        self.follow_var2.set(True)
-
+    # Generating data and updating the plot
     def update_plots(self):
         if self.is_plotting:
             for i in range(2):
@@ -237,20 +247,40 @@ class ContinuousPlotApp:
 
             self.root.after(100, self.update_plots)
 
+    # Jump to current button Plot 1
+    def jump_to_current1(self):
+        self.follow_var1.set(True)
+
+    # Jump to current button Plot 2
+    def jump_to_current2(self):
+        self.follow_var2.set(True)
+
+    # Save button
     def save_data(self):
-        df1_1 = pd.DataFrame(self.data1[0])
-        df1_2 = pd.DataFrame(self.data1[1])
-        df2 = pd.DataFrame(self.data2)
+    
+        x_vals = self.data2['x']    # use x from plot 2
+        max_len = len(x_vals)   # align lengths
+        
+        # pad with NaNs so they are the same length
+        y1 = self.data1[0]['y'] + [None]*(max_len - len(self.data1[0]['y']))
+        y2 = self.data1[1]['y'] + [None]*(max_len - len(self.data1[1]['y']))
+        y3 = self.data2['y'] + [None]*(max_len - len(self.data2['y']))
+
+        df = pd.DataFrame({
+            'x': x_vals,
+            'Plot1_Line1_y': y1,
+            'Plot1_Line2_y': y2,
+            'Plot2_Line1_y': y3
+        })
 
         file_path = self.file_path
         if file_path:
             with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
-                df1_1.to_excel(writer, sheet_name='Plot1_Line1', index=False)
-                df1_2.to_excel(writer, sheet_name='Plot1_Line2', index=False)
-                df2.to_excel(writer, sheet_name='Plot2_Line1', index=False)
+                df.to_excel(writer, sheet_name='Data', index=False)
             messagebox.showinfo("Save Data", f"Data saved to {file_path}")
             self.data_saved = True
 
+    # Exit button. Ask to save first
     def exit_program(self):
         if not self.data_saved:
             confirm = messagebox.askyesnocancel("Exit", "Save data before exiting?")
