@@ -42,7 +42,7 @@ class ContinuousPlotApp:
         self.main_frame.grid_rowconfigure(0, weight=1)
 
         # Left side - Plots
-        self.plots_frame = ctk.CTkFrame(self.main_frame)
+        self.plots_frame = ctk.CTkFrame(self.main_frame, width=150, border_width=1, border_color="red")
         self.plots_frame.grid(row=0, column=0, sticky="nsew")
 
         # Plot 1
@@ -54,7 +54,7 @@ class ContinuousPlotApp:
         self.canvas1_container = ctk.CTkFrame(self.plot1_container)
         self.canvas1_container.grid(row=0, column=0, sticky="nsew")
 
-        self.fig1, self.ax1 = plt.subplots(figsize=(10, 4))
+        self.fig1, self.ax1 = plt.subplots(figsize=(10, 4.5))
         self.lines1 = [
             self.ax1.plot([], [], 'r-', label='Line 1')[0],
             self.ax1.plot([], [], 'b-', label='Line 2')[0]
@@ -73,13 +73,13 @@ class ContinuousPlotApp:
 
         # Controls for Plot 1 (aligned vertically center right)
         self.plot1_controls = ctk.CTkFrame(self.plot1_container)
-        self.plot1_controls.grid(row=0, column=1, sticky="ns", padx=10)
+        self.plot1_controls.grid(row=0, column=1, sticky="ns", padx=200, pady=200)
         self.plot1_controls.grid_rowconfigure(0, weight=1)
         self.plot1_controls.grid_rowconfigure(1, weight=1)
         self.jump1_button = ctk.CTkButton(self.plot1_controls, text="Jump to Current 1", command=self.jump_to_current1)
-        self.jump1_button.grid(row=0, column=0, pady=(150, 5))
+        self.jump1_button.grid(row=0, column=0, pady=(115, 5))
         self.follow_check1 = ctk.CTkCheckBox(self.plot1_controls, text="Disable Auto-Follow 1", variable=self.follow_var1, onvalue=False, offvalue=True)
-        self.follow_check1.grid(row=1, column=0, pady=5)
+        self.follow_check1.grid(row=0, column=0, pady=(185, 5))
 
         # Plot 2
         self.plot2_container = ctk.CTkFrame(self.plots_frame)
@@ -88,9 +88,9 @@ class ContinuousPlotApp:
         self.plot2_container.grid_columnconfigure(1, weight=0)
 
         self.canvas2_container = ctk.CTkFrame(self.plot2_container)
-        self.canvas2_container.grid(row=0, column=0, sticky="nsew")
+        self.canvas2_container.grid(row=1, column=0, sticky="nsew")
 
-        self.fig2, self.ax2 = plt.subplots(figsize=(10, 4))
+        self.fig2, self.ax2 = plt.subplots(figsize=(10, 4.5))
         self.line2 = self.ax2.plot([], [], 'g-', label='Line 3')[0]
         self.ax2.set_xlim(0, 100)
         self.ax2.set_title('Plot 2 (One Line)')
@@ -105,14 +105,14 @@ class ContinuousPlotApp:
         self.canvas2_widget.bind('<B1-Motion>', lambda event: self.drag_scroll(event, self.ax2, [self.data2]))
 
         # Controls for Plot 2 (aligned vertically center right)
-        self.plot2_controls = ctk.CTkFrame(self.plot2_container)
-        self.plot2_controls.grid(row=0, column=1, sticky="ns", padx=10)
+        self.plot2_controls = ctk.CTkFrame(self.plot2_container, width=150, border_width=1, border_color="red")
+        self.plot2_controls.grid(row=1, column=1, sticky="ns", padx=200)
         self.plot2_controls.grid_rowconfigure(0, weight=1)
         self.plot2_controls.grid_rowconfigure(1, weight=1)
         self.jump2_button = ctk.CTkButton(self.plot2_controls, text="Jump to Current 2", command=self.jump_to_current2)
-        self.jump2_button.grid(row=0, column=0, pady=(150, 5))
+        self.jump2_button.grid(row=0, column=0, pady=(115, 5))
         self.follow_check2 = ctk.CTkCheckBox(self.plot2_controls, text="Disable Auto-Follow 2", variable=self.follow_var2, onvalue=False, offvalue=True)
-        self.follow_check2.grid(row=1, column=0, pady=5)
+        self.follow_check2.grid(row=0, column=0, pady=(185, 5))
 
         # Main control buttons on the far right
         self.control_frame = ctk.CTkFrame(self.main_frame)
